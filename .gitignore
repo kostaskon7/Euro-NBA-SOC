@@ -11,7 +11,7 @@ env/
 # testing.ipynb
 index_api.html
 index_full.html
-testing.ipynb
+# testing.ipynb
 
 # Optional: ignore Python cache, build files, etc.
 __pycache__/
