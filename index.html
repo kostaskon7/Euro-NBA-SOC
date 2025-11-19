@@ -79,34 +79,39 @@
       let html = `<table>
         <thead>
           <tr>
-            <th>Team Code</th>
+            <th>#</th>
+            <!--<th>Team Code</th>//-->
             <th>Team Name</th>
             <th>SOS</th>
-            <th>Games Remaining</th>
+            <!--<th>Games Remaining</th>//-->
             <th>Opponents</th>
             <th>Opponent Rankings</th>
-            <th>Game Dates</th>
-            <th>Game Codes</th>
+            <!--<th>Game Dates</th>//-->
+            <!--<th>Game Codes</th>//-->
           </tr>
         </thead>
         <tbody>`;
 
-      data.forEach(team => {
+      data.forEach((team, index) => {
         html += `<tr>
-          <td>${team.teamCode}</td>
+          <td>${index + 1}</td>
+          <!--<td>${team.teamCode}</td>//-->
           <td>${team.teamName}</td>
           <td>${team.SOS !== null ? team.SOS.toFixed(2) : "N/A"}</td>
-          <td>${team.gamesRemaining}</td>
+          <!--
+            <td>${team.gamesRemaining}</td>>
+            //-->
           <td>${team.opponents.join(", ")}</td>
           <td>${team.opponentRankings.join(", ")}</td>
-          <td>${team.gameDates.map(d => new Date(d).toLocaleDateString()).join(", ")}</td>
-          <td>${team.gameCodes.join(", ")}</td>
+          <!--<td>${team.gameDates.map(d => new Date(d).toLocaleDateString()).join(", ")}</td>//-->
+          <!--<td>${team.gameCodes.join(", ")}</td>//-->
         </tr>`;
       });
 
       html += "</tbody></table>";
       return html;
     }
+
 
 
     async function main() {
