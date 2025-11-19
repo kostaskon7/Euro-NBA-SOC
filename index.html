@@ -9,34 +9,31 @@
   <h1>EuroLeague Strength of Schedule</h1>
   <div id="output"></div>
 
+  <!-- Canvas for SOS plot -->
+  <canvas id="sosPlot" height="300" style="margin-top: 30px; border:1px solid #ccc;"></canvas>
+
   <script>
-    // Load JSON files
     async function loadJSON(url) {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Failed to fetch ${url}`);
       return response.json();
     }
 
-    // Compute Strength of Schedule
     function computeSOS(standings, futureGames, nGames = 5) {
       const rankings = {};
-      standings.forEach(team => {
-        rankings[team.teamCode] = team.ranking;
-      });
+      standings.forEach(team => { rankings[team.teamCode] = team.ranking; });
 
       const results = standings.map(team => {
         const code = team.teamCode;
 
-        // Games where team is home
         const homeGames = futureGames.filter(g => g.homecode === code)
           .map(g => ({ opponent: g.awaycode, date: new Date(g.date), gamecode: g.gamecode }));
-
-        // Games where team is away
         const awayGames = futureGames.filter(g => g.awaycode === code)
           .map(g => ({ opponent: g.homecode, date: new Date(g.date), gamecode: g.gamecode }));
 
-        // Combine and sort by date
-        const nextGames = [...homeGames, ...awayGames].sort((a,b) => a.date - b.date).slice(0, nGames);
+        const nextGames = [...homeGames, ...awayGames]
+          .sort((a,b) => a.date - b.date)
+          .slice(0, nGames);
 
         if (nextGames.length === 0) {
           return {
@@ -67,27 +64,21 @@
         };
       });
 
-      // Sort by SOS ascending (easiest → hardest)
       results.sort((a,b) => (a.SOS || 0) - (b.SOS || 0));
-
       return results;
     }
 
     function renderTable(data) {
       if (data.length === 0) return "<p>No data available</p>";
 
-      let html = `<table>
+      let html = `<table id="sosTable">
         <thead>
           <tr>
             <th>#</th>
-            <!--<th>Team Code</th>//-->
             <th>Team Name</th>
             <th>SOS</th>
-            <!--<th>Games Remaining</th>//-->
             <th>Opponents</th>
             <th>Opponent Rankings</th>
-            <!--<th>Game Dates</th>//-->
-            <!--<th>Game Codes</th>//-->
           </tr>
         </thead>
         <tbody>`;
@@ -95,16 +86,10 @@
       data.forEach((team, index) => {
         html += `<tr>
           <td>${index + 1}</td>
-          <!--<td>${team.teamCode}</td>//-->
           <td>${team.teamName}</td>
           <td>${team.SOS !== null ? team.SOS.toFixed(2) : "N/A"}</td>
-          <!--
-            <td>${team.gamesRemaining}</td>>
-            //-->
           <td>${team.opponents.join(", ")}</td>
           <td>${team.opponentRankings.join(", ")}</td>
-          <!--<td>${team.gameDates.map(d => new Date(d).toLocaleDateString()).join(", ")}</td>//-->
-          <!--<td>${team.gameCodes.join(", ")}</td>//-->
         </tr>`;
       });
 
@@ -112,7 +97,63 @@
       return html;
     }
 
+    function drawSOSPlot(data) {
+      const canvas = document.getElementById("sosPlot");
+      const table = document.getElementById("sosTable");
 
+      // Make canvas width match the table width
+      canvas.width = table.offsetWidth;
+
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+
+      if (data.length === 0) return;
+
+      const padding = 40;
+      const plotWidth = width - padding * 2;
+      const plotHeight = height - padding * 2;
+      const maxSOS = Math.max(...data.map(d => d.SOS || 0));
+      const stepX = plotWidth / data.length;
+
+      ctx.fillStyle = "#007bff";
+      ctx.strokeStyle = "#333";
+      ctx.font = "12px Arial";
+      ctx.textAlign = "center";
+
+      // Axes
+      ctx.beginPath();
+      ctx.moveTo(padding, height - padding);
+      ctx.lineTo(width - padding, height - padding);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(padding, padding);
+      ctx.lineTo(padding, height - padding);
+      ctx.stroke();
+
+      // Dots and labels
+      data.forEach((team, i) => {
+        const x = padding + i * stepX + stepX / 2;
+        const y = height - padding - ((team.SOS || 0) / maxSOS) * plotHeight;
+
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+
+        ctx.fillText(team.teamCode, x, y - 10);
+        ctx.fillText(team.SOS !== null ? team.SOS.toFixed(2) : "N/A", x, y - 22);
+      });
+
+      // Y-axis labels
+      ctx.textAlign = "right";
+      ctx.fillStyle = "#000";
+      for (let i = 0; i <= maxSOS; i += Math.ceil(maxSOS/5)) {
+        const y = height - padding - (i / maxSOS) * plotHeight;
+        ctx.fillText(i, padding - 5, y + 4);
+      }
+    }
 
     async function main() {
       try {
@@ -123,16 +164,17 @@
 
         const sos = computeSOS(standings, futureGames, 5);
 
-        // Display results
         const output = document.getElementById('output');
-        // output.innerHTML = `<pre>${JSON.stringify(sos, null, 2)}</pre>`;
         output.innerHTML = renderTable(sos);
+
+        drawSOSPlot(sos);
 
       } catch (err) {
         console.error(err);
       }
     }
 
+    window.addEventListener("resize", main); // Re-draw on resize
     main();
   </script>
 </body>
