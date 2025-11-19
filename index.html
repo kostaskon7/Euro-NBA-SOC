@@ -91,34 +91,38 @@
     }
 
     function renderTable(data) {
-      if (!data.length) return "<p>No data available</p>";
+        if (!data.length) return "<p>No data available</p>";
 
-      let html = `<table id="sosTable">
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Team Name</th>
-            <th>SOS</th>
-            <th>Ranking</th>
-            <th>Opponents</th>
-            <th>Opponent Rankings</th>
-          </tr>
-        </thead>
-        <tbody>`;
+        let html = `<table id="sosTable">
+            <thead>
+            <tr>
+                <th>#</th>
+                <th>Team Name</th>
+                <th>SOS</th>
+                <th>Ranking</th>
+                <th>Opponents</th>
+                <th>Opponent Rankings</th>
+            </tr>
+            </thead>
+            <tbody>`;
 
-      data.forEach((team,index) => {
-        html += `<tr>
-          <td>${index+1}</td>
-          <td>${team.teamName}</td>
-          <td>${team.SOS !== null ? team.SOS.toFixed(2) : "N/A"}</td>
-          <td>${team.Ranking}</td>
-          <td>${team.opponents.join(", ")}</td>
-          <td>${team.opponentRankings.join(", ")}</td>
-        </tr>`;
-      });
+        data.forEach((team,index) => {
+            // Limit to first 10 items
+            const opps = team.opponents.slice(0, 8).join(", ");
+            const oppRanks = team.opponentRankings.slice(0, 8).join(", ");
 
-      html += "</tbody></table>";
-      return html;
+            html += `<tr>
+            <td>${index+1}</td>
+            <td>${team.teamName}</td>
+            <td>${team.SOS !== null ? team.SOS.toFixed(2) : "N/A"}</td>
+            <td>${team.Ranking}</td>
+            <td>${opps}</td>
+            <td>${oppRanks}</td>
+            </tr>`;
+        });
+
+        html += "</tbody></table>";
+        return html;
     }
 
     function makeTableSortable(tableId) {
@@ -218,7 +222,7 @@
           loadJSON("standings.json"),
           loadJSON("future_games.json")
         ]);
-        const sos = computeSOS(standings,futureGames,5);
+        const sos = computeSOS(standings,futureGames,10);
         const output = document.getElementById("output");
         output.innerHTML = renderTable(sos);
 
