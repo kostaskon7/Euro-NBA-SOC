@@ -9,6 +9,9 @@ env/
 
 # Ignore notebook used for testing
 # testing.ipynb
+index._api.html
+index_full.html
+testing.ipynb
 
 # Optional: ignore Python cache, build files, etc.
 __pycache__/
