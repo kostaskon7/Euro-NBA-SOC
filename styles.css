@@ -1,0 +1,93 @@
+/* Body and page styling */
+body {
+  background-color: #f0f2f5;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  margin: 2rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+h1 {
+  color: #0077cc;
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+/* Table container */
+#output {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+/* Table styling */
+table {
+  border-collapse: collapse;
+  width: 90%;
+  max-width: 1200px;
+  background-color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Table headers */
+th {
+  background-color: #0077cc;
+  color: #fff;
+  padding: 12px 15px;
+  text-align: left;
+  font-weight: 600;
+}
+
+/* Table cells */
+td {
+  border-bottom: 1px solid #ddd;
+  padding: 10px 15px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* Stripe effect for rows */
+tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+/* Hover effect */
+tr:hover {
+  background-color: #e6f2ff;
+  transition: background-color 0.2s;
+}
+
+/* Responsive table */
+@media (max-width: 768px) {
+  table, thead, tbody, th, td, tr {
+    display: block;
+  }
+
+  thead tr {
+    display: none;
+  }
+
+  tr {
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    overflow: hidden;
+    padding: 10px;
+  }
+
+  td {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+  }
+
+  td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    flex: 1;
+  }
+}

@@ -1,0 +1,21 @@
+# Ignore Visual Studio Code settings
+.vscode/
+
+# Ignore Python virtual environments
+venv/
+ENV/
+env/
+.venv/
+
+# Ignore notebook used for testing
+# testing.ipynb
+
+# Optional: ignore Python cache, build files, etc.
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.swp
+
+# Optional: ignore Jupyter checkpoint files
+.ipynb_checkpoints/

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>EuroLeague Strength of Schedule</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>EuroLeague Strength of Schedule</h1>
+  <div id="output"></div>
+
+  <script>
+    // Load JSON files
+    async function loadJSON(url) {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`Failed to fetch ${url}`);
+      return response.json();
+    }
+
+    // Compute Strength of Schedule
+    function computeSOS(standings, futureGames, nGames = 5) {
+      const rankings = {};
+      standings.forEach(team => {
+        rankings[team.teamCode] = team.ranking;
+      });
+
+      const results = standings.map(team => {
+        const code = team.teamCode;
+
+        // Games where team is home
+        const homeGames = futureGames.filter(g => g.homecode === code)
+          .map(g => ({ opponent: g.awaycode, date: new Date(g.date), gamecode: g.gamecode }));
+
+        // Games where team is away
+        const awayGames = futureGames.filter(g => g.awaycode === code)
+          .map(g => ({ opponent: g.homecode, date: new Date(g.date), gamecode: g.gamecode }));
+
+        // Combine and sort by date
+        const nextGames = [...homeGames, ...awayGames].sort((a,b) => a.date - b.date).slice(0, nGames);
+
+        if (nextGames.length === 0) {
+          return {
+            teamCode: code,
+            teamName: team.teamName,
+            SOS: null,
+            gamesRemaining: 0,
+            opponents: [],
+            opponentRankings: [],
+            gameDates: [],
+            gameCodes: []
+          };
+        }
+
+        const oppCodes = nextGames.map(g => g.opponent);
+        const oppRankings = oppCodes.map(c => rankings[c] || null);
+        const sos = oppRankings.reduce((a,b) => a + b, 0) / oppRankings.length;
+
+        return {
+          teamCode: code,
+          teamName: team.teamName,
+          SOS: sos,
+          gamesRemaining: nextGames.length,
+          opponents: oppCodes,
+          opponentRankings: oppRankings,
+          gameDates: nextGames.map(g => g.date.toISOString()),
+          gameCodes: nextGames.map(g => g.gamecode)
+        };
+      });
+
+      // Sort by SOS ascending (easiest → hardest)
+      results.sort((a,b) => (a.SOS || 0) - (b.SOS || 0));
+
+      return results;
+    }
+
+    function renderTable(data) {
+      if (data.length === 0) return "<p>No data available</p>";
+
+      let html = `<table>
+        <thead>
+          <tr>
+            <th>Team Code</th>
+            <th>Team Name</th>
+            <th>SOS</th>
+            <th>Games Remaining</th>
+            <th>Opponents</th>
+            <th>Opponent Rankings</th>
+            <th>Game Dates</th>
+            <th>Game Codes</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+      data.forEach(team => {
+        html += `<tr>
+          <td>${team.teamCode}</td>
+          <td>${team.teamName}</td>
+          <td>${team.SOS !== null ? team.SOS.toFixed(2) : "N/A"}</td>
+          <td>${team.gamesRemaining}</td>
+          <td>${team.opponents.join(", ")}</td>
+          <td>${team.opponentRankings.join(", ")}</td>
+          <td>${team.gameDates.map(d => new Date(d).toLocaleDateString()).join(", ")}</td>
+          <td>${team.gameCodes.join(", ")}</td>
+        </tr>`;
+      });
+
+      html += "</tbody></table>";
+      return html;
+    }
+
+
+    async function main() {
+      try {
+        const [standings, futureGames] = await Promise.all([
+          loadJSON('standings.json'),
+          loadJSON('future_games.json')
+        ]);
+
+        const sos = computeSOS(standings, futureGames, 5);
+
+        // Display results
+        const output = document.getElementById('output');
+        // output.innerHTML = `<pre>${JSON.stringify(sos, null, 2)}</pre>`;
+        output.innerHTML = renderTable(sos);
+
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    main();
+  </script>
+</body>
+</html>
