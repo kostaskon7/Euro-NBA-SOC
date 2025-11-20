@@ -249,8 +249,8 @@
     async function main() {
       try {
         const [standings, futureGames] = await Promise.all([
-          loadJSON("/netlify/functions/future_games"),
-          loadJSON("/netlify/functions/standings")
+          loadJSON("/.netlify/functions/future_games"),
+          loadJSON("/.netlify/functions/standings")
         ]);
 
         globalStandings = standings;
