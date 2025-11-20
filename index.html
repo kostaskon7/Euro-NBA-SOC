@@ -246,7 +246,6 @@
     let globalStandings = null;
     let globalFutureGames = null;
 
-
     async function main() {
       try {
         const [standings, futureGames] = await Promise.all([
@@ -257,7 +256,7 @@
         globalStandings = standings;
         globalFutureGames = futureGames;
 
-        // Compute max number of games
+        // --- (1) NEW: compute max games per team ---
         const teamCounts = {};
         futureGames.forEach(g => {
           teamCounts[g.homecode] = (teamCounts[g.homecode] || 0) + 1;
@@ -265,39 +264,47 @@
         });
         const maxGames = Math.max(...Object.values(teamCounts));
 
-        // Setup slider
+        // --- (2) NEW: apply to slider ---
         const slider = document.getElementById("gamesSlider");
         slider.max = maxGames;
         slider.value = Math.min(5, maxGames);
+        if (parseInt(slider.value) > maxGames) slider.value = maxGames;
         document.getElementById("gamesValue").textContent = slider.value;
+        // ---------------------------------------------------------------
 
-        // Initial render
+        // Initial render with default slider value
         updateSOS(globalStandings, globalFutureGames);
 
-        // Slider event
-        slider.addEventListener("input", () => {
-          document.getElementById("gamesValue").textContent = slider.value;
-          updateSOS(globalStandings, globalFutureGames);
+        // Update when slider moves
+        // document.getElementById("gamesSlider").addEventListener("input", () => {
+        //   document.getElementById("gamesValue").textContent =
+        //     document.getElementById("gamesSlider").value;
+        //   updateSOS(globalStandings, globalFutureGames);
+        // });
+        let sliderTimeout;
+        document.getElementById("gamesSlider").addEventListener("input", () => {
+          clearTimeout(sliderTimeout);
+          sliderTimeout = setTimeout(() => {
+            document.getElementById("gamesValue").textContent =
+              document.getElementById("gamesSlider").value;
+            updateSOS(globalStandings, globalFutureGames);
+          }, 100); // only run after 100ms of no movement
         });
+
 
       } catch (err) {
         console.error(err);
       }
     }
 
-    // Debounced resize
-    let resizeTimeout;
+
     window.addEventListener("resize", () => {
-      clearTimeout(resizeTimeout);
-      resizeTimeout = setTimeout(() => {
-        if (globalStandings && globalFutureGames) {
-          updateSOS(globalStandings, globalFutureGames);
-        }
-      }, 200);
+      if (globalStandings && globalFutureGames) {
+        updateSOS(globalStandings, globalFutureGames);
+      }
     });
 
     main();
-
 
   </script>
 </body>
