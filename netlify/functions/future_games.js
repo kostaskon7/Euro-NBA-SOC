@@ -1,41 +1,40 @@
-import { parseStringPromise } from "xml2js";
+import fetch from "node-fetch";
+import { XMLParser } from "fast-xml-parser";
 
-export default async function handler() {
-  const SEASON_CODE = "E2025";
-  const url = "https://api-live.euroleague.net/v1/schedules";
-
+export async function handler() {
   try {
-    const res = await fetch(`${url}?seasonCode=${SEASON_CODE}`);
-    if (!res.ok) {
-      return new Response(JSON.stringify({ error: "Failed to fetch EuroLeague schedules" }), {
-        status: res.status,
-        headers: { "Content-Type": "application/json" }
-      });
+    const SEASON_CODE = "E2025";
+    const url = `https://api-live.euroleague.net/v1/schedules?seasonCode=${SEASON_CODE}`;
+
+    const response = await fetch(url);
+    if (!response.ok) {
+      return { statusCode: 500, body: "Failed to fetch schedule" };
     }
 
-    const xml = await res.text();
-    const data = await parseStringPromise(xml);
+    const xmlText = await response.text();
 
-    let games = data.schedule.item.map(item => ({
-      gamecode: item.gamecode?.[0] || null,
-      homecode: item.homecode?.[0] || null,
-      awaycode: item.awaycode?.[0] || null,
-      date: item.date?.[0] || null,
-      played: String(item.played?.[0]).toLowerCase() === "true"
-    }));
+    const parser = new XMLParser({ ignoreAttributes: false });
+    const data = parser.parse(xmlText);
 
-    games = games.filter(g => !g.played);
-    games.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const items = data.schedule.item;
 
-    return new Response(JSON.stringify(games), {
-      status: 200,
-      headers: { "Content-Type": "application/json" }
-    });
+    const futureGames = items
+      .filter(g => g.played.toLowerCase() !== "true")
+      .map(g => ({
+        gamecode: g.gamecode,
+        homecode: g.homecode,
+        awaycode: g.awaycode,
+        date: new Date(g.date).toISOString(),
+        played: false
+      }))
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
 
+    return {
+      statusCode: 200,
+      body: JSON.stringify(futureGames)
+    };
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    console.error(err);
+    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
   }
 }
