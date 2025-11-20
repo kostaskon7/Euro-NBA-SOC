@@ -276,20 +276,20 @@
         updateSOS(globalStandings, globalFutureGames);
 
         // Update when slider moves
-        // document.getElementById("gamesSlider").addEventListener("input", () => {
-        //   document.getElementById("gamesValue").textContent =
-        //     document.getElementById("gamesSlider").value;
-        //   updateSOS(globalStandings, globalFutureGames);
-        // });
-        let sliderTimeout;
         document.getElementById("gamesSlider").addEventListener("input", () => {
-          clearTimeout(sliderTimeout);
-          sliderTimeout = setTimeout(() => {
-            document.getElementById("gamesValue").textContent =
-              document.getElementById("gamesSlider").value;
-            updateSOS(globalStandings, globalFutureGames);
-          }, 100); // only run after 100ms of no movement
+          document.getElementById("gamesValue").textContent =
+            document.getElementById("gamesSlider").value;
+          updateSOS(globalStandings, globalFutureGames);
         });
+        // let sliderTimeout;
+        // document.getElementById("gamesSlider").addEventListener("input", () => {
+        //   clearTimeout(sliderTimeout);
+        //   sliderTimeout = setTimeout(() => {
+        //     document.getElementById("gamesValue").textContent =
+        //       document.getElementById("gamesSlider").value;
+        //     updateSOS(globalStandings, globalFutureGames);
+        //   }, 100); // only run after 100ms of no movement
+        // });
 
 
       } catch (err) {
