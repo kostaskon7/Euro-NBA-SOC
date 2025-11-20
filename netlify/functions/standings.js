@@ -1,19 +1,19 @@
 import { parseStringPromise } from "xml2js";
 
 export default async function handler() {
-  try {
-    const url = "https://api-live.euroleague.net/v1/standings";
-    const params = new URLSearchParams({ seasonCode: "E2025" });
+  const SEASON_CODE = "E2025";
+  const url = "https://api-live.euroleague.net/v1/standings";
 
-    const response = await fetch(`${url}?${params.toString()}`);
-    if (!response.ok) {
-      return new Response(JSON.stringify({ error: "Failed to fetch EuroLeague standings" }), {
-        status: response.status,
-        headers: { "Content-Type": "application/json" }
-      });
+  try {
+    const res = await fetch(`${url}?seasonCode=${SEASON_CODE}`);
+    if (!res.ok) {
+      return {
+        statusCode: res.status,
+        body: JSON.stringify({ error: "Failed to fetch EuroLeague standings" })
+      };
     }
 
-    const xml = await response.text();
+    const xml = await res.text();
     const data = await parseStringPromise(xml);
 
     const group = data.standings.group[0];
@@ -34,17 +34,18 @@ export default async function handler() {
       difference: parseInt(t.difference[0])
     }));
 
+    // Sort by ranking
     rows.sort((a, b) => a.ranking - b.ranking);
 
-    return new Response(JSON.stringify(rows), {
-      status: 200,
-      headers: { "Content-Type": "application/json" }
-    });
-
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(rows)
+    };
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ error: err.message })
+    };
   }
 }
