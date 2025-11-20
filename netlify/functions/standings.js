@@ -7,10 +7,10 @@ export default async function handler() {
   try {
     const res = await fetch(`${url}?seasonCode=${SEASON_CODE}`);
     if (!res.ok) {
-      return {
-        statusCode: res.status,
-        body: JSON.stringify({ error: "Failed to fetch EuroLeague standings" })
-      };
+      return new Response(JSON.stringify({ error: "Failed to fetch EuroLeague standings" }), {
+        status: res.status,
+        headers: { "Content-Type": "application/json" }
+      });
     }
 
     const xml = await res.text();
@@ -34,18 +34,17 @@ export default async function handler() {
       difference: parseInt(t.difference[0])
     }));
 
-    // Sort by ranking
     rows.sort((a, b) => a.ranking - b.ranking);
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(rows)
-    };
+    return new Response(JSON.stringify(rows), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 }

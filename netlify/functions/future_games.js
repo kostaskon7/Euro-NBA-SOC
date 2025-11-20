@@ -7,16 +7,15 @@ export default async function handler() {
   try {
     const res = await fetch(`${url}?seasonCode=${SEASON_CODE}`);
     if (!res.ok) {
-      return {
-        statusCode: res.status,
-        body: JSON.stringify({ error: "Failed to fetch EuroLeague schedules" })
-      };
+      return new Response(JSON.stringify({ error: "Failed to fetch EuroLeague schedules" }), {
+        status: res.status,
+        headers: { "Content-Type": "application/json" }
+      });
     }
 
     const xml = await res.text();
     const data = await parseStringPromise(xml);
 
-    // Convert XML items to cleaned array
     let games = data.schedule.item.map(item => ({
       gamecode: item.gamecode?.[0] || null,
       homecode: item.homecode?.[0] || null,
@@ -25,21 +24,18 @@ export default async function handler() {
       played: String(item.played?.[0]).toLowerCase() === "true"
     }));
 
-    // Filter to future games
     games = games.filter(g => !g.played);
-
-    // Sort by date
     games.sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(games)
-    };
+    return new Response(JSON.stringify(games), {
+      status: 200,
+      headers: { "Content-Type": "application/json" }
+    });
+
   } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ error: err.message })
-    };
+    return new Response(JSON.stringify({ error: err.message }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
   }
 }
