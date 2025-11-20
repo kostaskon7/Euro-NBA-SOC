@@ -36,6 +36,12 @@
 </head>
 <body>
   <h1>EuroLeague Strength of Schedule</h1>
+  <div style="margin-bottom:20px; text-align:center;">
+    <label for="gamesSlider"><b>Select number of upcoming games:</b></label><br>
+    <input type="range" id="gamesSlider" min="1" value="10" step="1">
+    <span id="gamesValue">10</span>
+  </div>
+
   <div id="output"></div>
 
   <canvas id="sosPlot" height="300"></canvas>
@@ -214,28 +220,81 @@
             ctx.fillText(i, padding - 5, y + 4);
         }
     }
+    function updateSOS(standings, futureGames) {
+      const nGames = parseInt(document.getElementById("gamesSlider").value);
+      const sos = computeSOS(standings, futureGames, nGames);
 
+      const output = document.getElementById("output");
+      output.innerHTML = renderTable(sos);
+      makeTableSortable("sosTable");
+      drawSOSPlot(sos);
+    }
+
+    // Determine max number of upcoming games for any team
+    function maxGamesPerTeam(futureGames) {
+      const teamCounts = {};
+
+      futureGames.forEach(g => {
+        teamCounts[g.homecode] = (teamCounts[g.homecode] || 0) + 1;
+        teamCounts[g.awaycode] = (teamCounts[g.awaycode] || 0) + 1;
+      });
+
+      return Math.max(...Object.values(teamCounts));
+    }
+
+
+    let globalStandings = null;
+    let globalFutureGames = null;
 
     async function main() {
       try {
-        const [standings,futureGames] = await Promise.all([
+        const [standings, futureGames] = await Promise.all([
           loadJSON("standings.json"),
           loadJSON("future_games.json")
         ]);
-        const sos = computeSOS(standings,futureGames,10);
-        const output = document.getElementById("output");
-        output.innerHTML = renderTable(sos);
 
-        makeTableSortable("sosTable");
-        drawSOSPlot(sos);
+        globalStandings = standings;
+        globalFutureGames = futureGames;
 
-      } catch(err) {
+        // --- (1) NEW: compute max games per team ---
+        const teamCounts = {};
+        futureGames.forEach(g => {
+          teamCounts[g.homecode] = (teamCounts[g.homecode] || 0) + 1;
+          teamCounts[g.awaycode] = (teamCounts[g.awaycode] || 0) + 1;
+        });
+        const maxGames = Math.max(...Object.values(teamCounts));
+
+        // --- (2) NEW: apply to slider ---
+        const slider = document.getElementById("gamesSlider");
+        slider.max = maxGames;
+        if (parseInt(slider.value) > maxGames) slider.value = maxGames;
+        document.getElementById("gamesValue").textContent = slider.value;
+        // ---------------------------------------------------------------
+
+        // Initial render with default slider value
+        updateSOS(globalStandings, globalFutureGames);
+
+        // Update when slider moves
+        document.getElementById("gamesSlider").addEventListener("input", () => {
+          document.getElementById("gamesValue").textContent =
+            document.getElementById("gamesSlider").value;
+          updateSOS(globalStandings, globalFutureGames);
+        });
+
+      } catch (err) {
         console.error(err);
       }
     }
 
-    window.addEventListener("resize", main);
+
+    window.addEventListener("resize", () => {
+      if (globalStandings && globalFutureGames) {
+        updateSOS(globalStandings, globalFutureGames);
+      }
+    });
+
     main();
+
   </script>
 </body>
 </html>
