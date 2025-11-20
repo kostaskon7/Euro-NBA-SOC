@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/kostaskon7/Euro-NBA-SOC#readme",
   "dependencies": {
+    "fast-xml-parser": "^5.3.2",
     "xml2js": "^0.6.2"
   },
   "devDependencies": {
