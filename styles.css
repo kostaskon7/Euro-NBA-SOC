@@ -91,3 +91,15 @@ tr:hover {
     flex: 1;
   }
 }
+
+/* ========================================= */
+/*   TEAM LOGO ICONS — NEW ADDITION          */
+/* ========================================= */
+
+.team-logo {
+  height: 20px;
+  width: auto;
+  margin: 0 4px;
+  vertical-align: middle;
+  display: inline-block;
+}
