@@ -246,6 +246,7 @@
     let globalStandings = null;
     let globalFutureGames = null;
 
+
     async function main() {
       try {
         const [standings, futureGames] = await Promise.all([
@@ -256,7 +257,7 @@
         globalStandings = standings;
         globalFutureGames = futureGames;
 
-        // --- (1) NEW: compute max games per team ---
+        // Compute max number of games
         const teamCounts = {};
         futureGames.forEach(g => {
           teamCounts[g.homecode] = (teamCounts[g.homecode] || 0) + 1;
@@ -264,21 +265,18 @@
         });
         const maxGames = Math.max(...Object.values(teamCounts));
 
-        // --- (2) NEW: apply to slider ---
+        // Setup slider
         const slider = document.getElementById("gamesSlider");
         slider.max = maxGames;
         slider.value = Math.min(5, maxGames);
-        if (parseInt(slider.value) > maxGames) slider.value = maxGames;
         document.getElementById("gamesValue").textContent = slider.value;
-        // ---------------------------------------------------------------
 
-        // Initial render with default slider value
+        // Initial render
         updateSOS(globalStandings, globalFutureGames);
 
-        // Update when slider moves
-        document.getElementById("gamesSlider").addEventListener("input", () => {
-          document.getElementById("gamesValue").textContent =
-            document.getElementById("gamesSlider").value;
+        // Slider event
+        slider.addEventListener("input", () => {
+          document.getElementById("gamesValue").textContent = slider.value;
           updateSOS(globalStandings, globalFutureGames);
         });
 
@@ -287,14 +285,19 @@
       }
     }
 
-
+    // Debounced resize
+    let resizeTimeout;
     window.addEventListener("resize", () => {
-      if (globalStandings && globalFutureGames) {
-        updateSOS(globalStandings, globalFutureGames);
-      }
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        if (globalStandings && globalFutureGames) {
+          updateSOS(globalStandings, globalFutureGames);
+        }
+      }, 200);
     });
 
     main();
+
 
   </script>
 </body>
