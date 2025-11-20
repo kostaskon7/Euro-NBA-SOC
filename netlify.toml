@@ -1,0 +1,6 @@
+[build]
+  # Folder where your site will be published (root in your case)
+  publish = "."
+  
+  # Folder where your serverless functions live
+  functions = "netlify/functions"
