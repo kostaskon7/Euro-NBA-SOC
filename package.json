@@ -1,0 +1,26 @@
+{
+  "name": "Euro-NBA-SOC",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kostaskon7/Euro-NBA-SOC.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kostaskon7/Euro-NBA-SOC/issues"
+  },
+  "homepage": "https://github.com/kostaskon7/Euro-NBA-SOC#readme",
+  "dependencies": {
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "netlify-cli": "^23.11.1"
+  }
+}

@@ -7,18 +7,27 @@ ENV/
 env/
 .venv/
 
-# Ignore notebook used for testing
+# Ignore notebook used for testing or temporary HTML files
+# (Uncomment these lines if you want to keep these files out of git)
 # testing.ipynb
-index_api.html
-index_full.html
-# testing.ipynb
+# index_api.html
+# index_full.html
 
-# Optional: ignore Python cache, build files, etc.
+# Ignore Python cache and swap files
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 *.swp
 
-# Optional: ignore Jupyter checkpoint files
+# Ignore Jupyter notebook checkpoints
 .ipynb_checkpoints/
+
+# Ignore local Netlify build folder (auto-generated)
+.netlify/
+
+# Ignore Node modules folder if you have one (add if applicable)
+node_modules/
+
+# Ignore logs
+*.log
