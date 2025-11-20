@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>EuroLeague Strength of Schedule</title>
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles_full.css">
   <style>
     th {
       cursor: pointer;
@@ -114,7 +114,10 @@
 
         data.forEach((team,index) => {
             // Limit to first 10 items
-            const opps = team.opponents.slice(0, 8).join(", ");
+            // const opps = team.opponents.slice(0, 8).join(", ");
+            const opps = team.opponents.slice(0, 8).map(code =>
+                `<img src="photos/team logos/${code}.webp" class="team-logo" alt="${code}">`
+            ).join("");
             const oppRanks = team.opponentRankings.slice(0, 8).join(", ");
 
             html += `<tr>
@@ -249,8 +252,8 @@
     async function main() {
       try {
         const [standings, futureGames] = await Promise.all([
-          loadJSON("standings.json"),
-          loadJSON("future_games.json")
+          loadJSON("/.netlify/functions/standings"),
+          loadJSON("/.netlify/functions/future_games")
         ]);
 
         globalStandings = standings;
@@ -281,6 +284,16 @@
             document.getElementById("gamesSlider").value;
           updateSOS(globalStandings, globalFutureGames);
         });
+        // let sliderTimeout;
+        // document.getElementById("gamesSlider").addEventListener("input", () => {
+        //   clearTimeout(sliderTimeout);
+        //   sliderTimeout = setTimeout(() => {
+        //     document.getElementById("gamesValue").textContent =
+        //       document.getElementById("gamesSlider").value;
+        //     updateSOS(globalStandings, globalFutureGames);
+        //   }, 100); // only run after 100ms of no movement
+        // });
+
 
       } catch (err) {
         console.error(err);
