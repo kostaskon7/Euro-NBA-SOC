@@ -38,7 +38,7 @@
   <h1>EuroLeague Strength of Schedule</h1>
   <div style="margin-bottom:20px; text-align:center;">
     <label for="gamesSlider"><b>Select number of upcoming games:</b></label><br>
-    <input type="range" id="gamesSlider" min="1" value="10" step="1">
+    <input type="range" id="gamesSlider" min="1" value="5" step="1">
     <span id="gamesValue">10</span>
   </div>
 
@@ -267,6 +267,7 @@
         // --- (2) NEW: apply to slider ---
         const slider = document.getElementById("gamesSlider");
         slider.max = maxGames;
+        slider.value = Math.min(5, maxGames);
         if (parseInt(slider.value) > maxGames) slider.value = maxGames;
         document.getElementById("gamesValue").textContent = slider.value;
         // ---------------------------------------------------------------
