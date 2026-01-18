@@ -2,189 +2,199 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>EuroLeague Strength of Schedule</title>
-  <link rel="stylesheet" href="styles_full.css">
-  <style>
-    th {
-      cursor: pointer;
-      background-color: #0077cc; /* blue headers */
-      color: white;
-      padding: 8px 12px;
-      text-align: center;
-    }
-    th.sorted-asc::after { content: " ▲"; }
-    th.sorted-desc::after { content: " ▼"; }
-    table {
-      border-collapse: collapse;
-      margin: 20px auto;
-      width: 90%;
-    }
-    td {
-      padding: 8px 12px;
-      text-align: center;
-      border: 1px solid #ccc;
-    }
-    canvas {
-      display: block;
-      margin: 30px auto;
-      width: 90%;
-      height: 300px;
-      max-width: 1200px;
-      border: 1px solid #ccc;
-    }
-  </style>
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- React and Babel -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 </head>
 <body>
-  <h1>EuroLeague Strength of Schedule</h1>
-  <div style="margin-bottom:20px; text-align:center;">
-    <label for="gamesSlider"><b>Select number of upcoming games:</b></label><br>
-    <input type="range" id="gamesSlider" min="1" value="5" step="1">
-    <span id="gamesValue">10</span>
-  </div>
+  <div id="root"></div>
 
-  <div id="output"></div>
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useCallback } = React;
 
-  <canvas id="sosPlot" height="300"></canvas>
+    // Main App Component
+    function App() {
+      const [standings, setStandings] = useState(null);
+      const [futureGames, setFutureGames] = useState(null);
+      const [nGames, setNGames] = useState(5);
+      const [maxGames, setMaxGames] = useState(10);
+      const [sortConfig, setSortConfig] = useState({ column: null, direction: 'asc' });
+      const canvasRef = useRef(null);
+      const tableRef = useRef(null);
+      const chartCardRef = useRef(null);
 
-  <script>
-    async function loadJSON(url) {
-      const response = await fetch(url);
-      if (!response.ok) throw new Error(`Failed to fetch ${url}`);
-      return response.json();
-    }
+      // Load data
+      useEffect(() => {
+        async function loadData() {
+          try {
+            const [standingsData, futureGamesData] = await Promise.all([
+              fetch("/.netlify/functions/standings").then(r => r.json()),
+              fetch("/.netlify/functions/future_games").then(r => r.json())
+            ]);
 
-    function computeSOS(standings, futureGames, nGames = 5) {
-      const rankingsMap = {};
-      standings.forEach(team => { rankingsMap[team.teamCode] = team.ranking; });
+            setStandings(standingsData);
+            setFutureGames(futureGamesData);
 
-      const results = standings.map(team => {
-        const code = team.teamCode;
+            // Calculate max games
+            const teamCounts = {};
+            futureGamesData.forEach(g => {
+              teamCounts[g.homecode] = (teamCounts[g.homecode] || 0) + 1;
+              teamCounts[g.awaycode] = (teamCounts[g.awaycode] || 0) + 1;
+            });
+            const max = Math.max(...Object.values(teamCounts));
+            setMaxGames(max);
+            setNGames(Math.min(5, max));
+          } catch (err) {
+            console.error(err);
+          }
+        }
+        loadData();
+      }, []);
 
-        const homeGames = futureGames.filter(g => g.homecode === code)
-          .map(g => ({ opponent: g.awaycode, date: new Date(g.date), gamecode: g.gamecode }));
-        const awayGames = futureGames.filter(g => g.awaycode === code)
-          .map(g => ({ opponent: g.homecode, date: new Date(g.date), gamecode: g.gamecode }));
+      // Compute SOS
+      const computeSOS = useCallback((standings, futureGames, nGames) => {
+        if (!standings || !futureGames) return [];
+        
+        const rankingsMap = {};
+        standings.forEach(team => { rankingsMap[team.teamCode] = team.ranking; });
 
-        const nextGames = [...homeGames, ...awayGames].sort((a,b) => a.date - b.date).slice(0, nGames);
+        const results = standings.map(team => {
+          const code = team.teamCode;
+          const homeGames = futureGames.filter(g => g.homecode === code)
+            .map(g => ({ opponent: g.awaycode, date: new Date(g.date), gamecode: g.gamecode, isHome: true }));
+          const awayGames = futureGames.filter(g => g.awaycode === code)
+            .map(g => ({ opponent: g.homecode, date: new Date(g.date), gamecode: g.gamecode, isHome: false }));
 
-        if (!nextGames.length) {
+          const nextGames = [...homeGames, ...awayGames].sort((a,b) => a.date - b.date).slice(0, nGames);
+
+          if (!nextGames.length) {
+            return {
+              teamCode: code,
+              teamName: team.teamName,
+              SOS: null,
+              Ranking: team.ranking,
+              opponents: [],
+              opponentRankings: [],
+              opponentHomeAway: []
+            };
+          }
+
+          const oppCodes = nextGames.map(g => g.opponent);
+          const oppRankings = oppCodes.map(c => rankingsMap[c] || null);
+          const oppHomeAway = nextGames.map(g => g.isHome ? 'H' : 'A');
+          const sos = oppRankings.reduce((a,b) => a+b, 0)/oppRankings.length;
+
           return {
             teamCode: code,
             teamName: team.teamName,
-            SOS: null,
+            SOS: sos,
             Ranking: team.ranking,
-            opponents: [],
-            opponentRankings: []
+            opponents: oppCodes,
+            opponentRankings: oppRankings,
+            opponentHomeAway: oppHomeAway
           };
-        }
-
-        const oppCodes = nextGames.map(g => g.opponent);
-        const oppRankings = oppCodes.map(c => rankingsMap[c] || null);
-        const sos = oppRankings.reduce((a,b) => a+b, 0)/oppRankings.length;
-
-        return {
-          teamCode: code,
-          teamName: team.teamName,
-          SOS: sos,
-          Ranking: team.ranking,
-          opponents: oppCodes,
-          opponentRankings: oppRankings
-        };
-      });
-
-      results.sort((a,b) => (a.SOS || 0) - (b.SOS || 0));
-      return results;
-    }
-
-    function renderTable(data) {
-        if (!data.length) return "<p>No data available</p>";
-
-        let html = `<table id="sosTable">
-            <thead>
-            <tr>
-                <th>#</th>
-                <th>Team Name</th>
-                <th>SOS</th>
-                <th>Ranking</th>
-                <th>Opponents</th>
-                <th>Opponent Rankings</th>
-            </tr>
-            </thead>
-            <tbody>`;
-
-        data.forEach((team,index) => {
-            // Limit to first 10 items
-            // const opps = team.opponents.slice(0, 8).join(", ");
-            const opps = team.opponents.slice(0, 8).map(code =>
-                `<img src="photos/team logos/${code}.webp" class="team-logo" alt="${code}">`
-            ).join("");
-            const oppRanks = team.opponentRankings.slice(0, 8).join(", ");
-
-            html += `<tr>
-            <td>${index+1}</td>
-            <td>${team.teamName}</td>
-            <td>${team.SOS !== null ? team.SOS.toFixed(2) : "N/A"}</td>
-            <td>${team.Ranking}</td>
-            <td>${opps}</td>
-            <td>${oppRanks}</td>
-            </tr>`;
         });
 
-        html += "</tbody></table>";
-        return html;
-    }
+        return results.sort((a,b) => (a.SOS || 0) - (b.SOS || 0));
+      }, []);
 
-    function makeTableSortable(tableId) {
-      const table = document.getElementById(tableId);
-      const headers = table.querySelectorAll("th");
-      headers.forEach((th, idx) => {
-        th.addEventListener("click", () => {
-          const tbody = table.querySelector("tbody");
-          const rows = Array.from(tbody.querySelectorAll("tr"));
-          const isNumeric = idx === 2 || idx === 3; // SOS or Ranking
-          const currentDir = th.classList.contains("sorted-asc") ? "asc" : "desc";
-
-          rows.sort((a,b) => {
-            const aVal = a.children[idx].textContent;
-            const bVal = b.children[idx].textContent;
-            if (isNumeric) {
-              return currentDir === "asc" ? parseFloat(aVal) - parseFloat(bVal) : parseFloat(bVal) - parseFloat(aVal);
+      // Get sorted data
+      const getSortedData = useCallback(() => {
+        if (!standings || !futureGames) return [];
+        
+        let data = computeSOS(standings, futureGames, nGames);
+        
+        if (sortConfig.column !== null) {
+          const { column, direction } = sortConfig;
+          data = [...data].sort((a, b) => {
+            let aVal, bVal;
+            
+            switch(column) {
+              case 0: // #
+                aVal = data.indexOf(a);
+                bVal = data.indexOf(b);
+                break;
+              case 1: // Team Name
+                aVal = a.teamName;
+                bVal = b.teamName;
+                break;
+              case 2: // SOS
+                aVal = a.SOS !== null ? a.SOS : 0;
+                bVal = b.SOS !== null ? b.SOS : 0;
+                break;
+              case 3: // Ranking
+                aVal = a.Ranking;
+                bVal = b.Ranking;
+                break;
+              default:
+                return 0;
+            }
+            
+            if (typeof aVal === 'number') {
+              return direction === 'asc' ? aVal - bVal : bVal - aVal;
             } else {
-              return currentDir === "asc" ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+              return direction === 'asc' ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
             }
           });
+        }
+        
+        return data;
+      }, [standings, futureGames, nGames, sortConfig, computeSOS]);
 
-          tbody.innerHTML = "";
-          rows.forEach(r => tbody.appendChild(r));
+      // Handle sort
+      const handleSort = (columnIndex) => {
+        setSortConfig(prev => ({
+          column: columnIndex,
+          direction: prev.column === columnIndex && prev.direction === 'asc' ? 'desc' : 'asc'
+        }));
+      };
 
-          headers.forEach(h => h.classList.remove("sorted-asc","sorted-desc"));
-          th.classList.add(currentDir === "asc" ? "sorted-desc" : "sorted-asc");
-        });
-      });
-    }
+      // Draw chart helper function
+      const drawChart = useCallback((data) => {
+        if (!canvasRef.current || !data.length) return;
 
-    function drawSOSPlot(data) {
-        const canvas = document.getElementById("sosPlot");
-        const table = document.getElementById("sosTable");
-        canvas.width = table.offsetWidth; // dynamic width
+        const canvas = canvasRef.current;
+        // Get width from table if available, otherwise use chart card or default
+        let width = 800; // default width
+        if (tableRef.current && tableRef.current.offsetWidth > 0) {
+          width = tableRef.current.offsetWidth;
+        } else if (chartCardRef.current) {
+          width = chartCardRef.current.offsetWidth - 64; // account for padding (2rem = 32px * 2)
+        } else if (canvas.parentElement) {
+          width = canvas.parentElement.offsetWidth - 64;
+        }
+        
+        // Ensure minimum width
+        width = Math.max(width, 400);
+        
+        canvas.width = width;
+        canvas.style.width = '100%';
         const ctx = canvas.getContext("2d");
-        const width = canvas.width;
         const height = canvas.height;
         ctx.clearRect(0, 0, width, height);
-        if (!data.length) return;
 
-        const padding = 40;
-        const plotWidth = width - padding*2;
-        const plotHeight = height - padding*2;
+        const padding = 50;
+        const plotWidth = width - padding * 2;
+        const plotHeight = height - padding * 2;
         const maxSOS = Math.max(...data.map(d => d.SOS || 0));
+        if (maxSOS === 0) return;
         const stepX = plotWidth / data.length;
 
-        ctx.fillStyle = "#0077cc";
-        ctx.strokeStyle = "#333";
-        ctx.font = "12px Arial";
-        ctx.textAlign = "center";
+        // Modern gradient background
+        const gradient = ctx.createLinearGradient(0, 0, 0, height);
+        gradient.addColorStop(0, 'rgba(0, 119, 204, 0.05)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, width, height);
 
-        // Axes
+        // Axes with modern styling
+        ctx.strokeStyle = '#e0e0e0';
+        ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(padding, height - padding);
         ctx.lineTo(width - padding, height - padding);
@@ -195,120 +205,298 @@
         ctx.lineTo(padding, height - padding);
         ctx.stroke();
 
-        // Dots with Team Code and SOS
+        // Grid lines
+        ctx.strokeStyle = '#f0f0f0';
+        ctx.lineWidth = 1;
+        for (let i = 0; i <= 5; i++) {
+          const y = height - padding - (i / 5) * plotHeight;
+          ctx.beginPath();
+          ctx.moveTo(padding, y);
+          ctx.lineTo(width - padding, y);
+          ctx.stroke();
+        }
+
+        // Data points with team logos
+        const logoSize = 32;
+        let loadedImages = 0;
+        const totalImages = data.length;
+        
         data.forEach((team, i) => {
-            const x = padding + i*stepX + stepX/2;
-            const y = height - padding - ((team.SOS||0)/maxSOS)*plotHeight;
+          const x = padding + i * stepX + stepX / 2;
+          const y = height - padding - ((team.SOS || 0) / maxSOS) * plotHeight;
+          
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          img.onload = () => {
+            // Draw team logo with shadow
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
+            ctx.shadowBlur = 6;
+            ctx.shadowOffsetY = 2;
+            
+            // Draw logo
+            ctx.drawImage(img, x - logoSize / 2, y - logoSize / 2, logoSize, logoSize);
+            
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
 
-            // Dot
+            // SOS value below logo
+            ctx.fillStyle = '#666';
+            ctx.font = '10px "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(team.SOS !== null ? team.SOS.toFixed(2) : "N/A", x, y + logoSize / 2 + 14);
+            
+            loadedImages++;
+          };
+          
+          img.onerror = () => {
+            // Fallback: draw a circle if image fails to load
+            ctx.shadowColor = 'rgba(0, 119, 204, 0.3)';
+            ctx.shadowBlur = 8;
+            ctx.shadowOffsetY = 2;
+            
+            const dotGradient = ctx.createRadialGradient(x, y, 0, x, y, 8);
+            dotGradient.addColorStop(0, '#0077cc');
+            dotGradient.addColorStop(1, '#005599');
+            ctx.fillStyle = dotGradient;
             ctx.beginPath();
-            ctx.arc(x, y, 6, 0, 2*Math.PI);
+            ctx.arc(x, y, 8, 0, 2 * Math.PI);
             ctx.fill();
+            
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
 
-            // Team code above dot
-            ctx.fillStyle = "#000";
-            ctx.fillText(team.teamCode, x, y - 14);
-
-            // SOS value above team code
-            ctx.fillText(team.SOS !== null ? team.SOS.toFixed(2) : "N/A", x, y - 28);
-
-            ctx.fillStyle = "#0077cc"; // reset dot color
+            // SOS value below dot
+            ctx.fillStyle = '#666';
+            ctx.font = '10px "Segoe UI", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(team.SOS !== null ? team.SOS.toFixed(2) : "N/A", x, y + 20);
+            
+            loadedImages++;
+          };
+          
+          img.src = `photos/team logos/${team.teamCode}.webp`;
         });
 
         // Y-axis labels
         ctx.textAlign = "right";
-        ctx.fillStyle = "#000";
-        for (let i = 0; i <= maxSOS; i += Math.ceil(maxSOS/5)) {
-            const y = height - padding - (i / maxSOS) * plotHeight;
-            ctx.fillText(i, padding - 5, y + 4);
+        ctx.fillStyle = "#666";
+        ctx.font = '11px "Segoe UI", sans-serif';
+        for (let i = 0; i <= 5; i++) {
+          const value = (i / 5) * maxSOS;
+          const y = height - padding - (i / 5) * plotHeight;
+          ctx.fillText(value.toFixed(1), padding - 10, y + 4);
         }
-    }
-    function updateSOS(standings, futureGames) {
-      const nGames = parseInt(document.getElementById("gamesSlider").value);
-      const sos = computeSOS(standings, futureGames, nGames);
+      }, []);
 
-      const output = document.getElementById("output");
-      output.innerHTML = renderTable(sos);
-      makeTableSortable("sosTable");
-      drawSOSPlot(sos);
-    }
+      const sosData = getSortedData();
 
-    // Determine max number of upcoming games for any team
-    function maxGamesPerTeam(futureGames) {
-      const teamCounts = {};
+      // Draw chart when data changes
+      useEffect(() => {
+        if (sosData.length) {
+          // Use setTimeout to ensure DOM is ready
+          setTimeout(() => {
+            drawChart(sosData);
+          }, 100);
+        }
+      }, [sosData, drawChart]);
 
-      futureGames.forEach(g => {
-        teamCounts[g.homecode] = (teamCounts[g.homecode] || 0) + 1;
-        teamCounts[g.awaycode] = (teamCounts[g.awaycode] || 0) + 1;
-      });
+      // Handle resize
+      useEffect(() => {
+        const handleResize = () => {
+          if (sosData.length) {
+            setTimeout(() => drawChart(sosData), 100);
+          }
+        };
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+      }, [sosData, drawChart]);
 
-      return Math.max(...Object.values(teamCounts));
-    }
+      return (
+        <div className="app-container">
+          <header className="app-header">
+            <h1>EuroLeague Strength of Schedule</h1>
+            <p className="subtitle">Analyze upcoming game difficulty for each team</p>
+          </header>
 
+          <div className="controls-card">
+            <label htmlFor="gamesSlider" className="slider-label">
+              <span className="slider-label-text">Select number of upcoming games</span>
+              <span className="slider-value">{nGames}</span>
+            </label>
+            <input
+              type="range"
+              id="gamesSlider"
+              min="1"
+              max={maxGames}
+              value={nGames}
+              onChange={(e) => setNGames(parseInt(e.target.value))}
+              className="modern-slider"
+            />
+          </div>
 
-    let globalStandings = null;
-    let globalFutureGames = null;
+          {sosData.length > 0 && (
+            <>
+              <div className="table-card" ref={tableRef}>
+                <SOSTable data={sosData} onSort={handleSort} sortConfig={sortConfig} />
+              </div>
 
-    async function main() {
-      try {
-        const [standings, futureGames] = await Promise.all([
-          loadJSON("/.netlify/functions/standings"),
-          loadJSON("/.netlify/functions/future_games")
-        ]);
+              <div className="chart-card" ref={chartCardRef}>
+                <h2 className="chart-title">SOS Visualization</h2>
+                <canvas ref={canvasRef} id="sosPlot" height="300" className="modern-chart"></canvas>
+              </div>
+            </>
+          )}
 
-        globalStandings = standings;
-        globalFutureGames = futureGames;
-
-        // --- (1) NEW: compute max games per team ---
-        const teamCounts = {};
-        futureGames.forEach(g => {
-          teamCounts[g.homecode] = (teamCounts[g.homecode] || 0) + 1;
-          teamCounts[g.awaycode] = (teamCounts[g.awaycode] || 0) + 1;
-        });
-        const maxGames = Math.max(...Object.values(teamCounts));
-
-        // --- (2) NEW: apply to slider ---
-        const slider = document.getElementById("gamesSlider");
-        slider.max = maxGames;
-        slider.value = Math.min(5, maxGames);
-        if (parseInt(slider.value) > maxGames) slider.value = maxGames;
-        document.getElementById("gamesValue").textContent = slider.value;
-        // ---------------------------------------------------------------
-
-        // Initial render with default slider value
-        updateSOS(globalStandings, globalFutureGames);
-
-        // Update when slider moves
-        document.getElementById("gamesSlider").addEventListener("input", () => {
-          document.getElementById("gamesValue").textContent =
-            document.getElementById("gamesSlider").value;
-          updateSOS(globalStandings, globalFutureGames);
-        });
-        // let sliderTimeout;
-        // document.getElementById("gamesSlider").addEventListener("input", () => {
-        //   clearTimeout(sliderTimeout);
-        //   sliderTimeout = setTimeout(() => {
-        //     document.getElementById("gamesValue").textContent =
-        //       document.getElementById("gamesSlider").value;
-        //     updateSOS(globalStandings, globalFutureGames);
-        //   }, 100); // only run after 100ms of no movement
-        // });
-
-
-      } catch (err) {
-        console.error(err);
-      }
+          {!standings && (
+            <div className="loading-state">
+              <div className="spinner"></div>
+              <p>Loading data...</p>
+            </div>
+          )}
+        </div>
+      );
     }
 
+    // Table Component
+    function SOSTable({ data, onSort, sortConfig }) {
+      const getSortIcon = (columnIndex) => {
+        if (sortConfig.column !== columnIndex) return '↕️';
+        return sortConfig.direction === 'asc' ? '▲' : '▼';
+      };
 
-    window.addEventListener("resize", () => {
-      if (globalStandings && globalFutureGames) {
-        updateSOS(globalStandings, globalFutureGames);
-      }
-    });
+      return (
+        <>
+          {/* Desktop Table */}
+          <table id="sosTable" className="modern-table desktop-table">
+            <thead>
+              <tr>
+                <th onClick={() => onSort(0)} className="sortable">
+                  # {getSortIcon(0)}
+                </th>
+                <th onClick={() => onSort(1)} className="sortable">
+                  Team Name {getSortIcon(1)}
+                </th>
+                <th onClick={() => onSort(2)} className="sortable">
+                  SOS {getSortIcon(2)}
+                </th>
+                <th onClick={() => onSort(3)} className="sortable">
+                  Ranking {getSortIcon(3)}
+                </th>
+                <th>Opponents</th>
+                <th>Opponent Rankings</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.map((team, index) => (
+                <tr key={team.teamCode}>
+                  <td className="rank-cell">{index + 1}</td>
+                  <td className="team-name-cell">
+                    <span>{team.teamName}</span>
+                    <img
+                      src={`photos/team logos/${team.teamCode}.webp`}
+                      className="team-logo"
+                      alt={team.teamCode}
+                    />
+                  </td>
+                  <td className="sos-cell">
+                    {team.SOS !== null ? (
+                      <span className="sos-value">{team.SOS.toFixed(2)}</span>
+                    ) : (
+                      <span className="na-badge">N/A</span>
+                    )}
+                  </td>
+                  <td className="ranking-cell">{team.Ranking}</td>
+                  <td className="opponents-cell">
+                    {team.opponents.slice(0, 8).map((code, i) => {
+                      const homeAway = team.opponentHomeAway && team.opponentHomeAway[i] ? team.opponentHomeAway[i] : '';
+                      return (
+                        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', marginRight: '4px' }}>
+                          <img
+                            src={`photos/team logos/${code}.webp`}
+                            className="team-logo"
+                            alt={code}
+                          />
+                          {homeAway && (
+                            <span className="home-away-badge" title={homeAway === 'H' ? 'Home' : 'Away'}>
+                              {homeAway}
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </td>
+                  <td className="opponent-ranks-cell">
+                    {team.opponentRankings.slice(0, 8).join(", ")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
 
-    main();
+          {/* Mobile Card Layout */}
+          <div className="mobile-team-cards">
+            {data.map((team, index) => (
+              <div key={team.teamCode} className="mobile-team-card">
+                <div className="mobile-card-header">
+                  <div className="mobile-rank-badge">#{index + 1}</div>
+                  <div className="mobile-team-info">
+                    <img
+                      src={`photos/team logos/${team.teamCode}.webp`}
+                      className="mobile-team-logo"
+                      alt={team.teamCode}
+                    />
+                    <span className="mobile-team-name">{team.teamName}</span>
+                  </div>
+                </div>
+                
+                <div className="mobile-card-stats">
+                  <div className="mobile-stat-item">
+                    <span className="mobile-stat-label">SOS</span>
+                    <span className="mobile-stat-value sos-value">
+                      {team.SOS !== null ? team.SOS.toFixed(2) : "N/A"}
+                    </span>
+                  </div>
+                  <div className="mobile-stat-item">
+                    <span className="mobile-stat-label">Ranking</span>
+                    <span className="mobile-stat-value">{team.Ranking}</span>
+                  </div>
+                </div>
 
+                <div className="mobile-opponents-section">
+                  <div className="mobile-section-label">Upcoming Opponents</div>
+                  <div className="mobile-opponents-list">
+                    {team.opponents.slice(0, 8).map((code, i) => {
+                      const homeAway = team.opponentHomeAway && team.opponentHomeAway[i] ? team.opponentHomeAway[i] : '';
+                      const rank = team.opponentRankings[i] || 'N/A';
+                      return (
+                        <div key={i} className="mobile-opponent-item">
+                          <img
+                            src={`photos/team logos/${code}.webp`}
+                            className="mobile-opponent-logo"
+                            alt={code}
+                          />
+                          {homeAway && (
+                            <span className="mobile-home-away-badge" title={homeAway === 'H' ? 'Home' : 'Away'}>
+                              {homeAway}
+                            </span>
+                          )}
+                          <span className="mobile-opponent-rank">#{rank}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      );
+    }
+
+    // Render App
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
   </script>
 </body>
 </html>
