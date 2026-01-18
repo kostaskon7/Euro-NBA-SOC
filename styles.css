@@ -127,6 +127,9 @@ h1 {
 
 .controls-card {
   padding: 1.5rem 2rem;
+  width: 50%;
+  max-width: 50%;
+  margin: 0 auto;
 }
 
 /* Slider Styling */
@@ -637,6 +640,11 @@ h1 {
   .chart-card {
     padding: 1.25rem;
     border-radius: var(--radius-md);
+  }
+
+  .controls-card {
+    width: 100%;
+    max-width: 100%;
   }
 
   .app-container {
