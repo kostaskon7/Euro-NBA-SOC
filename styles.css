@@ -470,7 +470,155 @@ h1 {
   }
 }
 
-/* Responsive Design */
+/* Desktop Table - Always visible on desktop */
+.desktop-table {
+  display: table;
+}
+
+/* Mobile Card Layout - Hidden on desktop */
+.mobile-team-cards {
+  display: none;
+}
+
+/* Mobile Team Card Styles */
+.mobile-team-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-md);
+  border: 1px solid var(--border-color);
+}
+
+.mobile-card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.mobile-rank-badge {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  min-width: 3rem;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.mobile-team-info {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.mobile-team-logo {
+  height: 40px;
+  width: 40px;
+  border-radius: 50%;
+  object-fit: contain;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.mobile-team-name {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mobile-card-stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.mobile-stat-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.mobile-stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+
+.mobile-stat-value {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.mobile-opponents-section {
+  margin-top: 1rem;
+}
+
+.mobile-section-label {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mobile-opponents-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mobile-opponent-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--background);
+  padding: 0.5rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.mobile-opponent-logo {
+  height: 28px;
+  width: 28px;
+  border-radius: 4px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.mobile-home-away-badge {
+  background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  min-width: 18px;
+  text-align: center;
+}
+
+.mobile-opponent-rank {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Responsive Design - Mobile */
 @media (max-width: 768px) {
   body {
     padding: 1rem 0.5rem;
@@ -487,80 +635,87 @@ h1 {
   .controls-card,
   .table-card,
   .chart-card {
-    padding: 1.5rem 1rem;
+    padding: 1.25rem;
     border-radius: var(--radius-md);
   }
 
-  .modern-table {
+  .app-container {
+    gap: 1.25rem;
+  }
+
+  /* Hide desktop table on mobile */
+  .desktop-table {
+    display: none;
+  }
+
+  /* Show mobile cards on mobile */
+  .mobile-team-cards {
+    display: block;
+  }
+
+  .table-card {
+    padding: 0;
+  }
+
+  .chart-title {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .modern-chart {
+    height: 250px;
+  }
+
+  .slider-label {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .slider-value {
+    align-self: flex-end;
+  }
+}
+
+/* Extra small mobile devices */
+@media (max-width: 480px) {
+  body {
+    padding: 0.75rem 0.25rem;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
     font-size: 0.85rem;
   }
 
-  .modern-table th,
-  .modern-table td {
-    padding: 0.75rem 1rem;
+  .mobile-team-card {
+    padding: 1rem;
   }
 
-  .modern-table th {
-    font-size: 0.75rem;
-    padding: 1rem 0.75rem;
+  .mobile-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
   }
 
-  .app-container {
-    gap: 1.5rem;
+  .mobile-rank-badge {
+    align-self: flex-start;
   }
 
-  /* Responsive table */
-  @media (max-width: 640px) {
-    .modern-table,
-    .modern-table thead,
-    .modern-table tbody,
-    .modern-table th,
-    .modern-table td,
-    .modern-table tr {
-      display: block;
-    }
+  .mobile-card-stats {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
 
-    .modern-table thead tr {
-      display: none;
-    }
+  .mobile-opponents-list {
+    gap: 0.5rem;
+  }
 
-    .modern-table tr {
-      margin-bottom: 1rem;
-      border: 1px solid var(--border-color);
-      border-radius: var(--radius-md);
-      overflow: hidden;
-      padding: 0;
-      background: var(--surface);
-      box-shadow: var(--shadow-md);
-    }
-
-    .modern-table td {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.75rem 1rem;
-      border-bottom: 1px solid var(--border-color);
-      text-align: right;
-    }
-
-    .modern-table td:last-child {
-      border-bottom: none;
-    }
-
-    .modern-table td::before {
-      content: attr(data-label);
-      font-weight: 700;
-      color: var(--text-secondary);
-      text-transform: uppercase;
-      font-size: 0.75rem;
-      letter-spacing: 0.5px;
-      margin-right: 1rem;
-      flex: 1;
-      text-align: left;
-    }
-
-    .opponents-cell {
-      justify-content: flex-end;
-    }
+  .mobile-opponent-item {
+    padding: 0.4rem 0.6rem;
   }
 }
 

@@ -366,71 +366,131 @@
       };
 
       return (
-        <table id="sosTable" className="modern-table">
-          <thead>
-            <tr>
-              <th onClick={() => onSort(0)} className="sortable">
-                # {getSortIcon(0)}
-              </th>
-              <th onClick={() => onSort(1)} className="sortable">
-                Team Name {getSortIcon(1)}
-              </th>
-              <th onClick={() => onSort(2)} className="sortable">
-                SOS {getSortIcon(2)}
-              </th>
-              <th onClick={() => onSort(3)} className="sortable">
-                Ranking {getSortIcon(3)}
-              </th>
-              <th>Opponents</th>
-              <th>Opponent Rankings</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((team, index) => (
-              <tr key={team.teamCode}>
-                <td className="rank-cell">{index + 1}</td>
-                <td className="team-name-cell">
-                  <span>{team.teamName}</span>
-                  <img
-                    src={`photos/team logos/${team.teamCode}.webp`}
-                    className="team-logo"
-                    alt={team.teamCode}
-                  />
-                </td>
-                <td className="sos-cell">
-                  {team.SOS !== null ? (
-                    <span className="sos-value">{team.SOS.toFixed(2)}</span>
-                  ) : (
-                    <span className="na-badge">N/A</span>
-                  )}
-                </td>
-                <td className="ranking-cell">{team.Ranking}</td>
-                <td className="opponents-cell">
-                  {team.opponents.slice(0, 8).map((code, i) => {
-                    const homeAway = team.opponentHomeAway && team.opponentHomeAway[i] ? team.opponentHomeAway[i] : '';
-                    return (
-                      <span key={i} style={{ display: 'inline-flex', alignItems: 'center', marginRight: '4px' }}>
-                        <img
-                          src={`photos/team logos/${code}.webp`}
-                          className="team-logo"
-                          alt={code}
-                        />
-                        {homeAway && (
-                          <span className="home-away-badge" title={homeAway === 'H' ? 'Home' : 'Away'}>
-                            {homeAway}
-                          </span>
-                        )}
-                      </span>
-                    );
-                  })}
-                </td>
-                <td className="opponent-ranks-cell">
-                  {team.opponentRankings.slice(0, 8).join(", ")}
-                </td>
+        <>
+          {/* Desktop Table */}
+          <table id="sosTable" className="modern-table desktop-table">
+            <thead>
+              <tr>
+                <th onClick={() => onSort(0)} className="sortable">
+                  # {getSortIcon(0)}
+                </th>
+                <th onClick={() => onSort(1)} className="sortable">
+                  Team Name {getSortIcon(1)}
+                </th>
+                <th onClick={() => onSort(2)} className="sortable">
+                  SOS {getSortIcon(2)}
+                </th>
+                <th onClick={() => onSort(3)} className="sortable">
+                  Ranking {getSortIcon(3)}
+                </th>
+                <th>Opponents</th>
+                <th>Opponent Rankings</th>
               </tr>
+            </thead>
+            <tbody>
+              {data.map((team, index) => (
+                <tr key={team.teamCode}>
+                  <td className="rank-cell">{index + 1}</td>
+                  <td className="team-name-cell">
+                    <span>{team.teamName}</span>
+                    <img
+                      src={`photos/team logos/${team.teamCode}.webp`}
+                      className="team-logo"
+                      alt={team.teamCode}
+                    />
+                  </td>
+                  <td className="sos-cell">
+                    {team.SOS !== null ? (
+                      <span className="sos-value">{team.SOS.toFixed(2)}</span>
+                    ) : (
+                      <span className="na-badge">N/A</span>
+                    )}
+                  </td>
+                  <td className="ranking-cell">{team.Ranking}</td>
+                  <td className="opponents-cell">
+                    {team.opponents.slice(0, 8).map((code, i) => {
+                      const homeAway = team.opponentHomeAway && team.opponentHomeAway[i] ? team.opponentHomeAway[i] : '';
+                      return (
+                        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', marginRight: '4px' }}>
+                          <img
+                            src={`photos/team logos/${code}.webp`}
+                            className="team-logo"
+                            alt={code}
+                          />
+                          {homeAway && (
+                            <span className="home-away-badge" title={homeAway === 'H' ? 'Home' : 'Away'}>
+                              {homeAway}
+                            </span>
+                          )}
+                        </span>
+                      );
+                    })}
+                  </td>
+                  <td className="opponent-ranks-cell">
+                    {team.opponentRankings.slice(0, 8).join(", ")}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Mobile Card Layout */}
+          <div className="mobile-team-cards">
+            {data.map((team, index) => (
+              <div key={team.teamCode} className="mobile-team-card">
+                <div className="mobile-card-header">
+                  <div className="mobile-rank-badge">#{index + 1}</div>
+                  <div className="mobile-team-info">
+                    <img
+                      src={`photos/team logos/${team.teamCode}.webp`}
+                      className="mobile-team-logo"
+                      alt={team.teamCode}
+                    />
+                    <span className="mobile-team-name">{team.teamName}</span>
+                  </div>
+                </div>
+                
+                <div className="mobile-card-stats">
+                  <div className="mobile-stat-item">
+                    <span className="mobile-stat-label">SOS</span>
+                    <span className="mobile-stat-value sos-value">
+                      {team.SOS !== null ? team.SOS.toFixed(2) : "N/A"}
+                    </span>
+                  </div>
+                  <div className="mobile-stat-item">
+                    <span className="mobile-stat-label">Ranking</span>
+                    <span className="mobile-stat-value">{team.Ranking}</span>
+                  </div>
+                </div>
+
+                <div className="mobile-opponents-section">
+                  <div className="mobile-section-label">Upcoming Opponents</div>
+                  <div className="mobile-opponents-list">
+                    {team.opponents.slice(0, 8).map((code, i) => {
+                      const homeAway = team.opponentHomeAway && team.opponentHomeAway[i] ? team.opponentHomeAway[i] : '';
+                      const rank = team.opponentRankings[i] || 'N/A';
+                      return (
+                        <div key={i} className="mobile-opponent-item">
+                          <img
+                            src={`photos/team logos/${code}.webp`}
+                            className="mobile-opponent-logo"
+                            alt={code}
+                          />
+                          {homeAway && (
+                            <span className="mobile-home-away-badge" title={homeAway === 'H' ? 'Home' : 'Away'}>
+                              {homeAway}
+                            </span>
+                          )}
+                          <span className="mobile-opponent-rank">#{rank}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
             ))}
-          </tbody>
-        </table>
+          </div>
+        </>
       );
     }
 
