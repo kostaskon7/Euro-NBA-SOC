@@ -26,6 +26,7 @@
       const [sortConfig, setSortConfig] = useState({ column: null, direction: 'asc' });
       const canvasRef = useRef(null);
       const tableRef = useRef(null);
+      const chartCardRef = useRef(null);
 
       // Load data
       useEffect(() => {
@@ -65,9 +66,9 @@
         const results = standings.map(team => {
           const code = team.teamCode;
           const homeGames = futureGames.filter(g => g.homecode === code)
-            .map(g => ({ opponent: g.awaycode, date: new Date(g.date), gamecode: g.gamecode }));
+            .map(g => ({ opponent: g.awaycode, date: new Date(g.date), gamecode: g.gamecode, isHome: true }));
           const awayGames = futureGames.filter(g => g.awaycode === code)
-            .map(g => ({ opponent: g.homecode, date: new Date(g.date), gamecode: g.gamecode }));
+            .map(g => ({ opponent: g.homecode, date: new Date(g.date), gamecode: g.gamecode, isHome: false }));
 
           const nextGames = [...homeGames, ...awayGames].sort((a,b) => a.date - b.date).slice(0, nGames);
 
@@ -78,12 +79,14 @@
               SOS: null,
               Ranking: team.ranking,
               opponents: [],
-              opponentRankings: []
+              opponentRankings: [],
+              opponentHomeAway: []
             };
           }
 
           const oppCodes = nextGames.map(g => g.opponent);
           const oppRankings = oppCodes.map(c => rankingsMap[c] || null);
+          const oppHomeAway = nextGames.map(g => g.isHome ? 'H' : 'A');
           const sos = oppRankings.reduce((a,b) => a+b, 0)/oppRankings.length;
 
           return {
@@ -92,7 +95,8 @@
             SOS: sos,
             Ranking: team.ranking,
             opponents: oppCodes,
-            opponentRankings: oppRankings
+            opponentRankings: oppRankings,
+            opponentHomeAway: oppHomeAway
           };
         });
 
@@ -152,13 +156,25 @@
 
       // Draw chart helper function
       const drawChart = useCallback((data) => {
-        if (!canvasRef.current || !tableRef.current || !data.length) return;
+        if (!canvasRef.current || !data.length) return;
 
         const canvas = canvasRef.current;
-        const table = tableRef.current;
-        canvas.width = table.offsetWidth;
+        // Get width from table if available, otherwise use chart card or default
+        let width = 800; // default width
+        if (tableRef.current && tableRef.current.offsetWidth > 0) {
+          width = tableRef.current.offsetWidth;
+        } else if (chartCardRef.current) {
+          width = chartCardRef.current.offsetWidth - 64; // account for padding (2rem = 32px * 2)
+        } else if (canvas.parentElement) {
+          width = canvas.parentElement.offsetWidth - 64;
+        }
+        
+        // Ensure minimum width
+        width = Math.max(width, 400);
+        
+        canvas.width = width;
+        canvas.style.width = '100%';
         const ctx = canvas.getContext("2d");
-        const width = canvas.width;
         const height = canvas.height;
         ctx.clearRect(0, 0, width, height);
 
@@ -244,10 +260,15 @@
         }
       }, []);
 
+      const sosData = getSortedData();
+
       // Draw chart when data changes
       useEffect(() => {
         if (sosData.length) {
-          drawChart(sosData);
+          // Use setTimeout to ensure DOM is ready
+          setTimeout(() => {
+            drawChart(sosData);
+          }, 100);
         }
       }, [sosData, drawChart]);
 
@@ -261,8 +282,6 @@
         window.addEventListener("resize", handleResize);
         return () => window.removeEventListener("resize", handleResize);
       }, [sosData, drawChart]);
-
-      const sosData = getSortedData();
 
       return (
         <div className="app-container">
@@ -293,7 +312,7 @@
                 <SOSTable data={sosData} onSort={handleSort} sortConfig={sortConfig} />
               </div>
 
-              <div className="chart-card">
+              <div className="chart-card" ref={chartCardRef}>
                 <h2 className="chart-title">SOS Visualization</h2>
                 <canvas ref={canvasRef} id="sosPlot" height="300" className="modern-chart"></canvas>
               </div>
@@ -341,7 +360,14 @@
             {data.map((team, index) => (
               <tr key={team.teamCode}>
                 <td className="rank-cell">{index + 1}</td>
-                <td className="team-name-cell">{team.teamName}</td>
+                <td className="team-name-cell">
+                  <span>{team.teamName}</span>
+                  <img
+                    src={`photos/team logos/${team.teamCode}.webp`}
+                    className="team-logo"
+                    alt={team.teamCode}
+                  />
+                </td>
                 <td className="sos-cell">
                   {team.SOS !== null ? (
                     <span className="sos-value">{team.SOS.toFixed(2)}</span>
@@ -351,14 +377,23 @@
                 </td>
                 <td className="ranking-cell">{team.Ranking}</td>
                 <td className="opponents-cell">
-                  {team.opponents.slice(0, 8).map((code, i) => (
-                    <img
-                      key={i}
-                      src={`photos/team logos/${code}.webp`}
-                      className="team-logo"
-                      alt={code}
-                    />
-                  ))}
+                  {team.opponents.slice(0, 8).map((code, i) => {
+                    const homeAway = team.opponentHomeAway && team.opponentHomeAway[i] ? team.opponentHomeAway[i] : '';
+                    return (
+                      <span key={i} style={{ display: 'inline-flex', alignItems: 'center', marginRight: '4px' }}>
+                        <img
+                          src={`photos/team logos/${code}.webp`}
+                          className="team-logo"
+                          alt={code}
+                        />
+                        {homeAway && (
+                          <span className="home-away-badge" title={homeAway === 'H' ? 'Home' : 'Away'}>
+                            {homeAway}
+                          </span>
+                        )}
+                      </span>
+                    );
+                  })}
                 </td>
                 <td className="opponent-ranks-cell">
                   {team.opponentRankings.slice(0, 8).join(", ")}
