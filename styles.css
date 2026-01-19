@@ -328,7 +328,7 @@ h1 {
 .team-name-cell span {
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: pre-wrap;
 }
 
 .sos-cell {
