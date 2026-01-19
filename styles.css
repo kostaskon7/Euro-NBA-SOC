@@ -358,7 +358,7 @@ h1 {
 }
 
 .opponents-cell {
-  display: flex;
+  /* display: flex; */
   flex-wrap: nowrap;
   gap: 0.5rem;
   align-items: center;
@@ -380,6 +380,7 @@ h1 {
   flex-shrink: 0;
   display: inline-flex;
   align-items: center;
+  margin-right: 4px;
 }
 
 .opponent-ranks-cell {
