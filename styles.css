@@ -318,7 +318,7 @@ h1 {
 .team-name-cell {
   font-weight: 600;
   color: var(--text-primary);
-  display: flex;
+  /* display: flex; */
   align-items: center;
   gap: 8px;
   white-space: nowrap;
