@@ -216,7 +216,7 @@ h1 {
 /* Table styling */
 .modern-table {
   border-collapse: collapse;
-  width: 100%;
+  /* width: 100%; */
   background-color: var(--surface);
   border-radius: var(--radius-md);
   overflow: hidden;
