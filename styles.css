@@ -645,7 +645,7 @@ h1 {
 
   .controls-card {
     width: 100%;
-    max-width: 100%;
+    /* max-width: 100%; */
   }
 
   .app-container {
