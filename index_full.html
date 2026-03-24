@@ -159,17 +159,15 @@
         if (!canvasRef.current || !data.length) return;
 
         const canvas = canvasRef.current;
-        // Get width from table if available, otherwise use chart card or default
-        let width = 800; // default width
+        let width = 800;
         if (tableRef.current && tableRef.current.offsetWidth > 0) {
           width = tableRef.current.offsetWidth;
         } else if (chartCardRef.current) {
-          width = chartCardRef.current.offsetWidth - 64; // account for padding (2rem = 32px * 2)
+          width = chartCardRef.current.offsetWidth - 64;
         } else if (canvas.parentElement) {
           width = canvas.parentElement.offsetWidth - 64;
         }
         
-        // Ensure minimum width
         width = Math.max(width, 400);
         
         canvas.width = width;
@@ -185,14 +183,12 @@
         if (maxSOS === 0) return;
         const stepX = plotWidth / data.length;
 
-        // Modern gradient background
         const gradient = ctx.createLinearGradient(0, 0, 0, height);
         gradient.addColorStop(0, 'rgba(0, 119, 204, 0.05)');
         gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, width, height);
 
-        // Axes with modern styling
         ctx.strokeStyle = '#e0e0e0';
         ctx.lineWidth = 2;
         ctx.beginPath();
@@ -205,7 +201,6 @@
         ctx.lineTo(padding, height - padding);
         ctx.stroke();
 
-        // Grid lines
         ctx.strokeStyle = '#f0f0f0';
         ctx.lineWidth = 1;
         for (let i = 0; i <= 5; i++) {
@@ -216,10 +211,7 @@
           ctx.stroke();
         }
 
-        // Data points with team logos
         const logoSize = 32;
-        let loadedImages = 0;
-        const totalImages = data.length;
         
         data.forEach((team, i) => {
           const x = padding + i * stepX + stepX / 2;
@@ -229,28 +221,20 @@
           img.crossOrigin = 'anonymous';
           
           img.onload = () => {
-            // Draw team logo with shadow
             ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
             ctx.shadowBlur = 6;
             ctx.shadowOffsetY = 2;
-            
-            // Draw logo
             ctx.drawImage(img, x - logoSize / 2, y - logoSize / 2, logoSize, logoSize);
-            
             ctx.shadowBlur = 0;
             ctx.shadowOffsetY = 0;
 
-            // SOS value below logo
             ctx.fillStyle = '#666';
             ctx.font = '10px "Segoe UI", sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(team.SOS !== null ? team.SOS.toFixed(2) : "N/A", x, y + logoSize / 2 + 14);
-            
-            loadedImages++;
           };
           
           img.onerror = () => {
-            // Fallback: draw a circle if image fails to load
             ctx.shadowColor = 'rgba(0, 119, 204, 0.3)';
             ctx.shadowBlur = 8;
             ctx.shadowOffsetY = 2;
@@ -266,19 +250,15 @@
             ctx.shadowBlur = 0;
             ctx.shadowOffsetY = 0;
 
-            // SOS value below dot
             ctx.fillStyle = '#666';
             ctx.font = '10px "Segoe UI", sans-serif';
             ctx.textAlign = 'center';
             ctx.fillText(team.SOS !== null ? team.SOS.toFixed(2) : "N/A", x, y + 20);
-            
-            loadedImages++;
           };
           
           img.src = `photos/team logos/${team.teamCode}.webp`;
         });
 
-        // Y-axis labels
         ctx.textAlign = "right";
         ctx.fillStyle = "#666";
         ctx.font = '11px "Segoe UI", sans-serif';
@@ -291,17 +271,14 @@
 
       const sosData = getSortedData();
 
-      // Draw chart when data changes
       useEffect(() => {
         if (sosData.length) {
-          // Use setTimeout to ensure DOM is ready
           setTimeout(() => {
             drawChart(sosData);
           }, 100);
         }
       }, [sosData, drawChart]);
 
-      // Handle resize
       useEffect(() => {
         const handleResize = () => {
           if (sosData.length) {
@@ -384,7 +361,6 @@
                   Ranking {getSortIcon(3)}
                 </th>
                 <th>Opponents</th>
-                <th>Opponent Rankings</th>
               </tr>
             </thead>
             <tbody>
@@ -410,13 +386,15 @@
                   <td className="opponents-cell">
                     {team.opponents.slice(0, 8).map((code, i) => {
                       const homeAway = team.opponentHomeAway && team.opponentHomeAway[i] ? team.opponentHomeAway[i] : '';
+                      const rank = team.opponentRankings[i] != null ? team.opponentRankings[i] : 'N/A';
                       return (
-                        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', marginRight: '4px' }}>
+                        <span key={i} style={{ display: 'inline-flex', alignItems: 'center', marginRight: '8px', gap: '2px' }}>
                           <img
                             src={`photos/team logos/${code}.webp`}
                             className="team-logo"
                             alt={code}
                           />
+                          <span className="opponent-rank-inline">#{rank}</span>
                           {homeAway && (
                             <span className="home-away-badge" title={homeAway === 'H' ? 'Home' : 'Away'}>
                               {homeAway}
@@ -425,9 +403,6 @@
                         </span>
                       );
                     })}
-                  </td>
-                  <td className="opponent-ranks-cell">
-                    {team.opponentRankings.slice(0, 8).join(", ")}
                   </td>
                 </tr>
               ))}
@@ -468,7 +443,7 @@
                   <div className="mobile-opponents-list">
                     {team.opponents.slice(0, 8).map((code, i) => {
                       const homeAway = team.opponentHomeAway && team.opponentHomeAway[i] ? team.opponentHomeAway[i] : '';
-                      const rank = team.opponentRankings[i] || 'N/A';
+                      const rank = team.opponentRankings[i] != null ? team.opponentRankings[i] : 'N/A';
                       return (
                         <div key={i} className="mobile-opponent-item">
                           <img
@@ -476,12 +451,12 @@
                             className="mobile-opponent-logo"
                             alt={code}
                           />
+                          <span className="mobile-opponent-rank">#{rank}</span>
                           {homeAway && (
                             <span className="mobile-home-away-badge" title={homeAway === 'H' ? 'Home' : 'Away'}>
                               {homeAway}
                             </span>
                           )}
-                          <span className="mobile-opponent-rank">#{rank}</span>
                         </div>
                       );
                     })}
