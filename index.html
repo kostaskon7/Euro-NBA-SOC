@@ -60,8 +60,14 @@
       const computeSOS = useCallback((standings, futureGames, nGames) => {
         if (!standings || !futureGames) return [];
         
+        // CHANGE LINES 62-63 TO THIS:
         const rankingsMap = {};
-        standings.forEach(team => { rankingsMap[team.teamCode] = team.ranking; });
+        const winPctMap = {};
+        standings.forEach(team => { 
+          rankingsMap[team.teamCode] = team.ranking; 
+          // Calculate win percentage (wins / total games)
+          winPctMap[team.teamCode] = team.totalGames > 0 ? (team.wins / team.totalGames) : 0;
+        });
 
         const results = standings.map(team => {
           const code = team.teamCode;
@@ -87,7 +93,8 @@
           const oppCodes = nextGames.map(g => g.opponent);
           const oppRankings = oppCodes.map(c => rankingsMap[c] || null);
           const oppHomeAway = nextGames.map(g => g.isHome ? 'H' : 'A');
-          const sos = oppRankings.reduce((a,b) => a+b, 0)/oppRankings.length;
+          const oppWinPcts = oppCodes.map(c => winPctMap[c] || 0);
+          const sos = oppWinPcts.reduce((a, b) => a + b, 0) / oppWinPcts.length;
 
           return {
             teamCode: code,
@@ -100,7 +107,7 @@
           };
         });
 
-        return results.sort((a,b) => (a.SOS || 0) - (b.SOS || 0));
+        return results.sort((a, b) => (b.SOS || 0) - (a.SOS || 0));
       }, []);
 
       // Get sorted data
