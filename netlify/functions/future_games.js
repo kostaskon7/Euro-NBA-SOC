@@ -1,9 +1,11 @@
-const SEASON_CODE = "E2025";
+import { detectSeason } from "../lib/euroleague.js";
+
 const BASE_URL = "https://api-live.euroleague.net/v2/competitions/E/seasons";
 
 export default async function handler() {
   try {
-    const url = `${BASE_URL}/${SEASON_CODE}/games`;
+    const { code } = await detectSeason();
+    const url = `${BASE_URL}/${code}/games`;
     const res = await fetch(url, { headers: { "Accept": "application/json" } });
 
     if (!res.ok) {

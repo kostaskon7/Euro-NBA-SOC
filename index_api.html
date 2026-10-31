@@ -77,7 +77,11 @@ function computeSOS(standings, futureGames, n_games = 5) {
 
 // --- MAIN FUNCTION ---
 async function main() {
-    const SEASON_CODE = "E2025";
+    const seasonsRes = await fetch("https://api-live.euroleague.net/v2/competitions/E/seasons");
+    const seasons = (await seasonsRes.json()).data
+      .filter(s => new Date(s.activationDate) <= new Date())
+      .sort((a, b) => b.year - a.year);
+    const SEASON_CODE = seasons[0].code;
 
     // --- Fetch future games ---
     const gamesRes = await fetch(`https://api-live.euroleague.net/v1/schedules?seasonCode=${SEASON_CODE}`);

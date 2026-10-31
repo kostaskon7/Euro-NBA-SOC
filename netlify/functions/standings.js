@@ -1,9 +1,10 @@
-const SEASON_CODE = "E2025";
+import { detectSeason } from "../lib/euroleague.js";
+
 const MAX_ROUND = 40;
 const BASE_URL = "https://api-live.euroleague.net/v2/competitions/E/seasons";
 
-async function fetchRoundStandings(round) {
-  const url = `${BASE_URL}/${SEASON_CODE}/rounds/${round}/standings`;
+async function fetchRoundStandings(season, round) {
+  const url = `${BASE_URL}/${season}/rounds/${round}/standings`;
   const res = await fetch(url, { headers: { "Accept": "application/json" } });
   if (!res.ok) return null;
 
@@ -19,12 +20,12 @@ async function fetchRoundStandings(round) {
   return { root, standings };
 }
 
-async function detectCurrentRound() {
+async function detectCurrentRound(season) {
   let lo = 1, hi = MAX_ROUND, best = 1;
 
   while (lo <= hi) {
     const mid = Math.floor((lo + hi) / 2);
-    const result = await fetchRoundStandings(mid);
+    const result = await fetchRoundStandings(season, mid);
     if (result) {
       best = mid;
       lo = mid + 1;
@@ -38,8 +39,9 @@ async function detectCurrentRound() {
 
 export default async function handler() {
   try {
-    const round = await detectCurrentRound();
-    const result = await fetchRoundStandings(round);
+    const season = (await detectSeason()).code;
+    const round = await detectCurrentRound(season);
+    const result = await fetchRoundStandings(season, round);
 
     if (!result) {
       return new Response(JSON.stringify({ error: `No standings data for round ${round}` }), {
