@@ -5,13 +5,13 @@ const LEAGUES = {
     label: "EuroLeague",
     endpoint: "/.netlify/functions/euroleague",
     localLogo: (code) => `photos/team logos/${encodeURIComponent(code)}.webp`,
-    defaultGames: 5
+    defaultGames: 10
   },
   nba: {
     label: "NBA",
     endpoint: "/.netlify/functions/nba",
     localLogo: null,
-    defaultGames: 5
+    defaultGames: 10
   }
 };
 const DEFAULT_LEAGUE = "euroleague";
