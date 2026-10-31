@@ -196,7 +196,8 @@ function updateControls() {
   const data = state.cache[state.league]?.data;
   const max = Math.max(1, data?.maxGames || 1);
   const n = Math.min(Math.max(1, state.games[state.league] ?? LEAGUES[state.league].defaultGames), max);
-  state.games[state.league] = n;
+  // Only persist the clamp once real data has set the true maximum.
+  if (data) state.games[state.league] = n;
   els.range.max = String(max);
   els.range.value = String(n);
   els.range.style.setProperty("--fill", `${max > 1 ? ((n - 1) / (max - 1)) * 100 : 100}%`);
